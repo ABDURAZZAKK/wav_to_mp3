@@ -1,0 +1,39 @@
+services:
+  db:
+    container_name: postgres
+    image: postgres:14.1-alpine
+    ports:
+      - 5433:5432
+    volumes:
+      - ./data:/var/lib/postgres/data
+    environment:
+      - POSTGRES_HOST=localhost
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=db_name
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  web:
+    container_name: www
+    build: .
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      - ./output:/media/audio/
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    command: >
+      bash -c "uvicorn main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
